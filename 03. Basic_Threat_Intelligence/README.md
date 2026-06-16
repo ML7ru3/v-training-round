@@ -14,7 +14,9 @@ Tài liệu trong file này sẽ bao gồm:
 
 ##  Tham khảo
 
+- Computer Networking: A Top-Down Approach 8th Edition.
 - Google.
 - OWASP
 - Github POC.
+- GeeksforGeeks
 - ...
