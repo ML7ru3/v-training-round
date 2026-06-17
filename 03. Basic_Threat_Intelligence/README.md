@@ -19,4 +19,5 @@ Tài liệu trong file này sẽ bao gồm:
 - OWASP
 - Github POC.
 - GeeksforGeeks
+- Medium
 - ...
