@@ -29,7 +29,7 @@ Mặt phẳng điều khiển (control plane) đóng vai trò là "bộ não" đ
 
 #### Các thành phần và Giao thức quan trọng
 
-Control plane không chỉ có định tuyến mà ocon bao gồm các cơ chế quản lý khác:
+Control plane không chỉ có định tuyến mà còn bao gồm các cơ chế quản lý khác:
 
 - Thuật toán định tuyến: 
     - Link-State (LS): Yêu cầu kiến thức toàn cụ về mạng để tính toán đường đi ngắn nhất. (ví dụ: giao thức OSFF)
@@ -62,3 +62,6 @@ Control plane không chỉ có định tuyến mà ocon bao gồm các cơ chế
 - Ưu điểm: cho phép giao tiếp giữa cacs hệ thống không đồng nhất, hỗ trợ khả năng mở rộng thông qua phân chia mạng con (subnetting) và định tuyến linh hoạt.
 
 - Hạn chế: Không có cơ chế kiểm soát luồng (flow control) trực tiếp, dẫn đến khả năng xảy ra tắc nghẽn nếu có quá nhiều datagram cùng lưu thông; router có thể loại bỏ gói tin khi bị quá tải, gây mất dữ liệu. Tầng mạng thường dựa vào các tầng cao hơn (như tầng giao vận) để dảm bảo độ tin cậy của dữ liệu.
+
+
+<!-- TODO: Add thêm dữ liệu cho tầng mạng theo 2 hướng là Data Plane và Control Plane -->
