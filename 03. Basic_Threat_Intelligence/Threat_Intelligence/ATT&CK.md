@@ -1,0 +1,36 @@
+# MITRE ATT&CK
+
+![](../assets/attck-logo.jpg)
+
+MITRE ATT&CK là một cơ sở tri thức về các chiến thuật (tactics) và kỹ thuật (techniques) của kẻ tấn công mạng, được xây dựng dựa trên các quan sát thực tế và có thể truy cập công khai trên toàn câu. Khung làm việc này đóng vai trò là nền tảng để phát triển các mô hình và phương pháp luận đe dạo cụ thể cho các tổ chức, doanh nghiệp và chính phủ.
+
+## Chiến thuật (Tactics)
+
+Chiến thuật đại diện cho mục tiêu chiến lược của kẻ tấn công - đó là lý do tại sao (why) họ thực hiện một hành động cụ thể. Trong ma trận Enterpries, có 15 chiến thuật chính đại diện cho các giai đoạn kahcs nhau của một cuộc tấn công.
+
+- **Reconnaissance** (Trinh sát): Thu thập thông tin để lập kế hoạch cho các hoạt động trong tương lai (ví dụ: quét IP, tìm hiểu cấu hình phần cứng/phần mềm của nạn nhân)
+- **Resource Development** (Phát triển tài nguyên): Thiết lập các nguồn lực để hỗ trợ hoạt động (ví dụ: mua hạ tầng, chiếm đoạt tài khoản)
+- **Initial Access** (Truy cập ban đầu): Các nỗ lực xâm nhập vào mạng (ví dụ: Phishing, khai thác ứng dụng công khai)
+- **Execution** (Thực thi): Chạy mã độc trên hệ thống (ví dụ: sử dụng trình thông dịch lệnh PowerShell, Python hoặc chạy các tác vụ đã lập lịch)
+- **Persistence** (Duy trì): Cố gắng giữ vững chỗ đứng trong hệ thống (ví dụ: thao túng tài khoản, sửa đổi các tiến trình hệ thống khi khởi động)
+- **Privilege Escalation** (Leo thang đặc quyền): Tìm cách giành được quyền hạn cao hơn (ví dụ: thao túng mã thông báo truy cập, lạm dụng cơ chế kiểm soát nâng cao quyền)
+- **Stealth/Defense Evasion** (Ẩn mình/Né tránh phòng thủ): Tránh bị phát hiện (ví dụ: che dấu các tệp tin, làm xáo trộn thông tin, ngụy trang tiến trình)
+- **Defense Impairment** (Làm suy yếu phòng thủ): Vô hiệu hóa hoặc sửa đổi các công cụ bảo mật (ví dụ: tắt tường lửa, sửa đổi nhật ký sự kiện)
+- **Credential Access** (Truy cập thông tin xác thực): Đánh cắp tên người dùng và mật khẩu (ví dụ: Brute Force, trích xuất thông tin xác thực từ hệ điều hành)
+- **Discovery** (Khám phá): Tìm hiểu về môi trường mạng và hệ thống (ví dụ: khám phá tài khoản, dịch vụ mạng, cấu hình hệ thống)
+- **Lateral Movement** (Di chuyển ngang): Di chuyển qua các hệ thống khác nhau trong mạng (ví dụ: sử dụng dịch vụ từ xa như RDP, SSH hoặc chuyển giao công cụ tấn công)
+- **Collection** (Thu thập): Tập hợp dữ liệu có giá trị (ví dụ: chụp màn hình, thu thập email, lấy dữ liệu từ bộ nhớ tạm)
+- **Command and Control** (Chỉ huy và Kiểm soát): Giao tiếp với các hệ thống bị xâm nhập để điều khiển chúng (ví dụ: sử dụng các giao thức tầng ứng dụng, proxy)
+- **Exfiltration** (Trích xuất dữ liệu): Đánh cắp dữ liệu ra bên ngoài (ví dụ: gửi qua các dịch vụ web, phương tiện vật lý như USB)
+- **Impact** (Tác động): Thao túng, gây gián đoạn hoặc phá hủy hệ thống và dữ liệu (ví dụ: phá hủy dữ liệu, tấn công từ chối dịch vụ - DoS)
+
+## Kỹ thuật (Techniques)
+
+Kỹ thuật đại diện cho phương thức mà kẻ tấn công sử dụng để đạt đợc mục tiêu chiến thuật - đó là các thức thế nào (how) mà một hành động được thực hiện 
+
+- Độ chi tiết: Mỗi chiến thuật bao gồm nhiều kỹ thuật khác nhau:.
+- Kỹ thuật phụ (Sub-techniques): Nhằm cung cáp mô tả chi tiết hơn về các phwogn thức. Ví dụ, kỹ thuật "Phishing" có cá ký thuật phụ như: "Spearphishing Attachment" (tệp đính kèm), "Spearphising Link"  (liên kết đọc hại)
+
+## Ý nghĩa thực tiễn
+
+Khung ATT&CK cho phép các tổ chức không chỉ hiểu về các lỗ hổng mà còn hiểu về hành vi của đối thủ. Bằng cách ánh xạ các quan sát thực tế (như các Chỉ số thỏa hiệp - IoC) vào các kỹ thuật trong ATT&CK, các chuyên gia bảo mật có thể xây dựng hàng rào phòng thủ chủ động và hiệu quả hơn thay vì chỉ phản ứng thụ động.
