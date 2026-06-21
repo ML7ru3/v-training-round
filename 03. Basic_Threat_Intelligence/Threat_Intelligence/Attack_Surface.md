@@ -18,6 +18,26 @@ Vector tấn công phổ biến là phương thức mà tội phạm mạng sử
 - Phần mềm chưa được vá lỗi (Unpatched software): Tin tặc tích cực tìm kiếm các lỗ hổng chưa được vá trong hệ điều hành và ứng dụng để làm "cửa ngõ" xâm nhập.
 - Vấn đề mã hóa: Sử dụng các giao thức mã hóa dẫn đến dữ liệu bị lộ dưới dạng văn bản thuần túy (plaintext) khi bị đánh chặn.
 
+## Threat Actor 
+
+Tác nhân đe dọa (Threat Actor), còn được gọi là tác nhân gây hại, là những cá nhân hoặc nhóm ngưòi có hành vi cố ý gây hại cho các thiết bị hoặc hệ thống kỹ thuật số. Họ loịw dụng các lỗ hổng trong hệ thống máy tính, mạng và phầm mềm để thực hiện các cuộc tấn công mạng nhằm đạt được những mục tiêu cụ thể.
+
+### Các loại tác nhân đe dọa phổ biến
+
+- Tội phạm mạng (Cybercriminals): Đây là nhóm phổ biến nhất, hoạt động chủ yếu vì lợi nhuận tài chính. 
+- Tác nhân quốc gia (Nation-state actors): Được các chính phủ tài trợ để thực hiện hành động gián điệp, đánh cắp bí mật quốc gia hoặc phá hoại cơ sở hạ tầng trọng yếu của đối phương.
+- Tin tặc vì mục tiêu chính trị (Hacktivists): Những người này sử dụng kỹ thuật tấn công mạng để thúc đẩy các chương trình nghị sự chính trị hoặc xã hội
+- Người tìm kiếm sự phấn khích (Thrill seekers): Họ tấn công hệ thống chủ yếu để giải trí, thách thức bản thân hoặc thể hiện kỹ năng.
+- Mối đe dọa nội bộ (Insider Threat): NHững người bên trong tổ chức (nhân viên, đối tác) có quyền truy cập hệ thống.
+- Khủng bố mạng (Cyberterorists): Thực hiện các cuộc tấn công vì mục tiêu ý thức hệ hoặc tôn giáo nhằm gaya ra sự sợ hãi hoặc bạo lực.
+
+> Note: Hacker là người có kỹ năng kỹ thuật để xâm nhập hệ thống. Một "ethical hacker" có thể dùng kỹ năng để giúp tổ chức vá lỗ hổng. Threat Acor là thuật ngữ rộng hơn, bao gồm bất kỳ ai gây ra mối đe dọa, ngay cả khi họ không có kỹ năng kỹ thuật cao, vdu như một nhân viên vô tình làm mất USB chứa dữ liệu quan trọng.
+
+
+## Campain
+
+Champain (chiến dịch) được định nghĩa là một nhóm có hoạt động xâm nhập được thực hiện trong một khoảng thời gian cụ thể với mục tiêu và đối tượng tấn công chung.
+
 ## Quy trình quản lý Bề mặt tấn công
 
 Việc quản lý giúp tổ chức có cái nhìn tổng thể và chủ dộng phòng thủ:

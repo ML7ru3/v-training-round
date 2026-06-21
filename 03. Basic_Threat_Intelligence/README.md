@@ -7,7 +7,7 @@ Tài liệu trong file này sẽ bao gồm:
 - CVE life cycle, CSVSS v3.1 vector, NVD, KEV (**DONE**)
 - Vendor avisory, exploit flow, Prerequisites. (**DONE**)
 - ATT&CK framework, tactics và technique (**DONE**)
-- Threat actor, campain, APT
+- Threat actor, campain, APT (**DONE**)
 - WAF, IDS/IPS, EDR, SIEM.
 
 
