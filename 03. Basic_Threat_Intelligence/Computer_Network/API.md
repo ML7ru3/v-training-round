@@ -38,7 +38,7 @@ Các kiến trúc phổ biến bao gồm:
 Trong kiến trúc mạng, khái niệm API xuất hiện ở các vị trí quan trọng:
 
 - Socket API: Giao diện Socket chính là API giữa tầng ứng dụng và tầng giao vận. No cung cấp các quy tắc lập trình để các ứng dụng mạng có thể gửi/nhận dữ liệu qua hạ tầng Internet.
-- SDN APIs: Trong mạng điều khiển bằng phần mềm (SDN), bộ điều khiển (controller) cung cáp NOrthbound API (thường là REST) để các ứng dụng quản lý mạng có thể lập trình và điều khiển các thiết bị phần cứng bên dưới.
+- SDN APIs: Trong mạng điều khiển bằng phần mềm (SDN), bộ điều khiển (controller) cung cáp Northbound API (thường là REST) để các ứng dụng quản lý mạng có thể lập trình và điều khiển các thiết bị phần cứng bên dưới.
 
 ## Ưu điểm và hạn chế
 

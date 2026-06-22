@@ -8,7 +8,7 @@ Tài liệu trong file này sẽ bao gồm:
 - Vendor avisory, exploit flow, Prerequisites. (**DONE**)
 - ATT&CK framework, tactics và technique (**DONE**)
 - Threat actor, campain, APT (**DONE**)
-- WAF, IDS/IPS, EDR, SIEM.
+- WAF, IDS/IPS, EDR, SIEM. (**DONE**)
 
 
 ##  Tham khảo
