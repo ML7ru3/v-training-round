@@ -1,67 +1,57 @@
-# Tầng mạng (Network Layer)
+# Network Layer
 
-Trong mô hình OSI, tầng mạng (Network Layer) là tầng thứ 3, đóng vai trò quan trọng trong việc vận chuyển dữ liệu giữa các máy chủ (host) nằm trên các mạng khác nhau. Trong khi tầng liên kết dữ liệu chỉ đảm nhận việc chuyển gói tin giữa các nút kề cận trong một phân đoạn mạng, tầng mạng chịu trách nhiệm phân phối gói tin từ đầu cuối đến đầu cuối (end-to-end)
-
-
-## Cấu trúc Mặt phẳng Dữ liệu và Mặt phẳng Điều khiển
-
-Chúng ta có thể chia tầng mạng thành 2 phần tương tác (dựa vào sách *Computer Networking: A Top-Down Approach 8th Edition*):
-
-- Mặt phẳng dữ liệu (Data Plane): Tập trung vào các chức năng tại mỗi router, cụ thể là việc chuyển tiếp (forwarding) datagram từ liên kết đầu vào sang đầu ra.
-
-- Mặt phẳng điều khiển  (Control Plane): Tập trung vào logic toàn mạng, xác định bằng cách các datagram được định tuyến dọc thoe một con đường giữa các rourter từ nguồn đến đích. Điều này có thể được thực hiện thông qua các thuật toán định tuyến truyền thống chạy trên từng r outer hoặc thông qua một bộ điều khiển SDN tập trung (Software-Defined Networking).
-
-### Control Plane (Mặt phẳng Điều khiển)
-
-![](../assets/control-plane.png)
-
-Mặt phẳng điều khiển (control plane) đóng vai trò là "bộ não" điều khiển toàn mạng, xác định cách thức các gói tin (datagram) được định tuyến dọc theo con đường từ nguồn đến đích.
+Tầng mạng (Network Layer) là tầng thứ ba trong mô hình OSI, đóng vai trò then chốt trong việc vận chuển các gói tin từ máy chủ nguồn đến máy chủ đích thông qua các mạng lưới kết nối với nhau
 
 
-#### Sự khác biệt giữa định tuyến (Routing) và Chuyển tiếp (Forwarding)
+## Vai trò và Chức năng cốt lõi
 
-- Chuyển tiếp (Forwarding): Là hành động cục bộ của router, chuyển gói tin từ cổng đầu vào sagn cổng đàu ra phù hợp. Đây là chức năng của data plane.
-- Định tuyến (Routing): Là quy trình trên phạm vi toàn mạng nhằm xác định các đường đi tối ưu cho gói tin. Đây là chức năng chính của control plane.
+Nhiệm vụ chính của tầng mạng là di chuyển các gói tin (datagrams) xuyên suốt mạng lưới. Khác với tầng liên kết dữ liệu  chỉ tập trung vào việc truyền giữa hai nút kề nhau, tầng mạng đảm bảo việc truyền tải máy chủ đến máy chủ (host-to-host) ngay cả khi chúng nằm ở các mạng khác nhau.
 
-#### Hai phương thức triển khai Control Plane
+Tầng mạng có thể được chia thành hai mặt phẳng tương tác với nhau:
+- Mặt phẳng dữ liệu (Data Plane): Thực hiện chức năng chuyển tiếp (forwarding), là hành động cục bộ tại mỗi bộ định tuyến (router) nhằm đưa gói tin từ cổng đầu vào sang cổng đầu ra thích hợp. *(đây là chức năng cục bộ)*
+- Mặc phẳng điều khiển (Control Plane): Thực hiện chức năng định tuyến (routing), xác định lộ trình từ đầu đến cuối mà gói tin sẽ đi qua thông qua các thuật toán định tuyến. *(đây là chức nawgn cho toàn mạng)*
 
+## Cơ sở lý thuyết về Định tuyến (Routing)
 
+Để giải quyết bài toàn tìm đường tối ưu, tầng mạng sử dụng lý thuyết đồ thì (Graph theory). Trong đó, các bộ định tuyến được coi là các nút (nodes) và các liên kết vật lý là các cạnh (edges) của đồ thị.
 
-#### Các thành phần và Giao thức quan trọng
+Có hai thuật toán định tuyến cơ bản:
+- Thuật toán trạng thái liên kết (Link-State): Là thuật toán tập trung, yêu cầu thông tin đầy đủ về toàn bộ cấu trúc mạng để tính toán. Sử dụng thuật toán Dijkstra, giúp tìm đường đi ngắn nhất từ một nút nguồn đến các nút khác.
+- Thuật toán vector khoảng cách (Distance-Vector DV): Là thuật toán phân tán và lặp lại, trong đó các nút chỉ trao dổi thông tin với các lân cận trực tiếp. Dựa trên phương trình Bellman-Ford để cập nhật chi phí đường đi ước tính.
 
-Control plane không chỉ có định tuyến mà còn bao gồm các cơ chế quản lý khác:
+## Phân cấp Định tuyến trong Internet
 
-- Thuật toán định tuyến: 
-    - Link-State (LS): Yêu cầu kiến thức toàn cụ về mạng để tính toán đường đi ngắn nhất. (ví dụ: giao thức OSFF)
-    - Distance-Vector (DV): Các router trao đổi thông tin với các lân cận trực tiếp để dần xác định đường đi (ví dụ: giao thức BGP)
-- Giao thức ICMP (Internet COntrol Message Protocol): Đực sử dụng bở các host và router để thông báo các lỗi trong mạng (như "đích đến không thể kết nối") và hỗ trợ các cộng cụ chuẩn đoán như `ping` hay `traceroute`.
-- Quản lý mạng (SNMP và NETCONF/YANG): Cung cáp các công cụ để quản trị viên giám sát, cấu hình và điều khiển các thiết bị mạng từ xa.
+Do quy mô khổng lồ của Internet, việc chạy một thuật toán định tuyến duy nhất cho mọi router là không khả thi. Do đó, Internet được chia thahf các Hệ tự trị (Autoomous Systems - AS)
+- Intra-AS Routing: Định tuyến bên trong một AS (ví dụ: giao thức OSPF dựa trên trạng thái liên kết)
+- Inter-AS Routing: Định tuyến giữa các AS (ví dụ: giao thức BGP)
 
-## Chức năng và Trách nhiệm chính
+## Giao thức IP và Địa chỉ hóa
 
-- Đánh đại chỉ logic (Logical Addressing): Tầng mạng gán cho mỗi thiết bị một địa chỉ logic duy nhất (địa chỉ IP) để đảm bảo việc định danh và giao tiếp chính xác trên phạm vi toàn cầu.
+Giao thức IP (Internet Protocol) là thành phần trung tâm của tầng mạng. Nó định nghĩa cấu trúc gói tin và cơ chế địa chỉ hóa:
+- IPv4: Sử dụng địa chỉ 32-bit, thường viết dưới dạng số thập phân có dấu chấm (ví dụ: 193.32.216.9). Tiêu đề IPv4 thường dài 20 byte và chứa các trường như TTL để ngăn gói tin chạy vòng lặp vô hạn
+- IPv6: Ra đời để giải quyết sự cạn kiệt địa chỉ của IPv4, sử dụng địa chỉ 128 bit. Tiêu đề của nó được tinh giản xuống 40 byte cố định, loại bỏ các trường không cần thiết để tăng gốc độ xử lý tại các bộ định tuyến
 
-- Định tuyến (Routing): Sử dụng các thuật toán và giao thức định tuyến để xác định con đường tối ưu nhất cho gói tin đi qua nhiều mạng trung gian trước khi đến đích.
+### Các thành phần quan trọng trong gói tin (IPv4 Datagram)
 
-- Chuyển tiếp (Forwarding): Đây là hành động của bộ định tuyến (router) khi chuyển một gói tin từ giao diện đầu vào sang giao diện dầu ra phù hợp dựa trên bảng chuyển tiếp.
+![](../assets/ipv4_packet_structure.webp)
 
-- Đóng gói (Packetiation): Tầng này nhận các phân đoạn dữ liệu (segments) từ tầng giao vận và đóng gói chúng thành các gói tin (packets hoặc datagrams) bằng cách  thêm thông tin tiêu đề (header) chứa địa chỉ IP nguồn và đích.
+- Địa chỉ Nguồn và Đích: Xác định nơi gửi và nơi nhận của gói tin.
+- Thời gian sống (TTL): Một con số giảm dần qua mỗi bộ định tuyến; nếu TTL bằng 0, gói tin sẽ bị hủy để tránh tắc nghẽn do lặp vô hạn
+- Trường Giao thức (Protocol): Chỉ định dữ liệu bên trong thuộc về giao thức tầng trên nào để máy đích biết cách xử lý.
+- Header Checksum: Dùng để phát hiện các lỗi bit xảy ra trong tiêu đề của gói tin khi di chuyển qua mạng.
 
-- Phân mảnh và Tái hợp (Fragmentation and Reassembly): Nếu kích thước gói tin vượt quá đơn vị truyền tải tối đa (MTU) của một mạng, tầng mạng sẽ chỉa nhỏ gói tin đó và lắp ghép lại khi đến đích.
+### Địa chỉ hóa và Phân đoạn (Addressing & Fragmentation)
 
-## Các giao thức phổ biến
+- Địa chỉ IP: Không gắn liền với thiết bị mà gắn liền với giao diện mạng (interface). Một bộ định tuyến có nhiều giao diện sẽ có nhiều địa chỉ IP khác nhau.
+- Subnet: IP chia mạng lớn thành các mạng con (subnet) để quản lý hiệu quả hơn bằng cá sử dụng các tiền tố địa chỉ (prefix).
+- Phân đoạn (Fragmentation): Nếu gói tin IP quá lớn so với giới hạn của đường truyền (MTU), nó sẽ được bẻ nhỏ thành các mảnh tại router và được ghép lại tại điểm đích (chỉ có ở IPv4).
 
-- IP (Internet Protocol - IPv4/IPv6): Giao thức cốt lõi cung cấp cơ chế đánh địa chỉ và phân phát gói tin không tin cậy theo kiểu "nỗ lực tối đa" (best-effort).
-- ICMP (Internet Control Message Protocol): Được sử dụng để thông báo lỗi và cung cấp thông tin chuẩn đoán mạng (như lệnh ping hoặc traceroute)
-- ARP (Address Resolution Protocol): Giúp ánh xạ địa chỉ IP sang địa chỉ MAC vật lý cảu thiết bị trong cùng một mạng cục bộ.
-- NAT (Network Address Translation): Cho phép các mạng nội bộ sử dụng địa chỉ IP riêng có thể giao tiếp với Internet bằng cách ánh xạ chúng sang địa chỉ IP công cộng.
-- IPSec: Một bộ giao thức giúp bảo mật các giao tiếp IP thông qua xác thực và mã hóa (này được sử dụng trong VPN).
+## Mạng điều khiển bằng phần mềm (SDN)
 
-## Ưu điểm và hạn chế
+Trong cấu trúc hiện đại, SDN (Software-Defined Networking) tách biệt hoàn toàn mặt phẳng dữ liệu và mặt phẳng điều khiển. Thay vì mỗi router tự tính toán bảng chuyển tiếp, một bộ điều khiển trung tâm (SDN Controller) sẽ tính toán và cài đặt các bảng luồng (flow tables) vào các thiết bị chuyển tiếp. Cách tiếp cận này giúp mạng trở nên linh hoạt và dễ lập trình hơn.
 
-- Ưu điểm: cho phép giao tiếp giữa cacs hệ thống không đồng nhất, hỗ trợ khả năng mở rộng thông qua phân chia mạng con (subnetting) và định tuyến linh hoạt.
+## Các giao thức hỗ trợ khác
 
-- Hạn chế: Không có cơ chế kiểm soát luồng (flow control) trực tiếp, dẫn đến khả năng xảy ra tắc nghẽn nếu có quá nhiều datagram cùng lưu thông; router có thể loại bỏ gói tin khi bị quá tải, gây mất dữ liệu. Tầng mạng thường dựa vào các tầng cao hơn (như tầng giao vận) để dảm bảo độ tin cậy của dữ liệu.
-
-
-<!-- TODO: Add thêm dữ liệu cho tầng mạng theo 2 hướng là Data Plane và Control Plane -->
+- ICMP (Internet Control Message Protocol): Được sử dụng để báo cáo lỗi và trao đổi thông tin quản lý giữa các mạng
+- DHCP: Giúp tự động cấu hình và cấp phát địa chỉ IP cho các máy chủ mới tham gia vào mạng.
+- NAT: Cho phép nhiều thiết bị trong mạng cục bộ chia sẻ một địa chỉ IP công cộng duy nhất để kết nối Internet.
