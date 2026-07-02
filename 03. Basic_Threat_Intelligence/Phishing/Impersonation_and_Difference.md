@@ -4,7 +4,6 @@ Impersonation attack là một mối đe dọa trong đó kẻ tấn công mạo
 
 ## Sự khác biệt giừa Impersonation và Phishing.
 
-
 | Đặc điểm | Impersonation (Giả mạo danh tính) | Phishing (Lừa đảo) |
 | :--- | :--- | :--- |
 | **Định nghĩa** | Bắt chước một người/thực thể cụ thể (như CEO, nhà cung cấp) để đánh lừa người nhận. | Kẻ tấn công giả danh công ty/cá nhân để đánh cắp thông tin qua các thông điệp lừa đảo. |
