@@ -36,4 +36,3 @@ Sự tương tác giữa hai bên tuan theo một chu kỳ có cấu trúc:
     - Application Server: Đóng vai trò trung gian, thực hiện các logic nghiệp vụ và truy xuất hoặc lưu trữ dữ liệu vào db.
     - Data Layer: Chueyen biệt cho việc lưu trữ và quản lý dữ liệu.
 - Trung tâm dữ liệu (Data Center): Với các ứng dụng lớn (như Google, Facebook), một server đơn lẻ không thể tải nổi, do đó hàng trăm nghìn máy chủ trong các trung tâm dữ liệu được sử dụng để tạo thành các máy chủ ảo mạng mẽ.
-

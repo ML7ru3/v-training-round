@@ -1,5 +1,7 @@
 # Phishing
 
+![](../assets/phishing.jpg)
+
 Phishing (Tấn công giả mạo) là một loại hình tấn công mạng trong đó kẻ tấn công giả danh các công ty hoặc cá nhân đáng tin cậy để lừa người dùng cung cấp thon tin nhạy cảm.
 
 Dây được coi là một hình thức "tấn công vào con người" (human hacking) vì nó lợi dụng tâm lý thay vì lỗ hổng phần mềm
@@ -37,7 +39,7 @@ Phishing hoạt động dựa trên social engineering để thao túng nạn nh
 
 ### Hành động khi trở thành nạn nhân
 
-1. Đổi mật khẩu ngay lập tức
+1. Đổi mật khẩu ngay lập tức.
 2. Thông báo cho ngân hàng và các cơ quan chức năng.
 3. Ngắt kết nôi Internet nếu nghi ngờ thiết bị đã bị cài đặt mã độc.
 4. Báo cáo cho bộ phận IT.
