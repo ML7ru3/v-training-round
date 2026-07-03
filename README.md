@@ -1,3 +1,3 @@
-# VIETTEL TRAINING PROGRAM
+# TRAINING PROGRAM
 
 Author: Nguyen Quang Trung
